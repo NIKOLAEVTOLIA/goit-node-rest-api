@@ -63,15 +63,28 @@ export const updateContact = async (req, res, next) => {
       throw HttpError(400, "Body must have at least one field");
     }
 
-    const updFields = { name, email, phone };
+    const currentContact = await contactsService.getContactById(id);
+
+    if (!currentContact) {
+      throw HttpError(404, "Not found");
+    }
+
+    const updFields = {
+      name: name || currentContact.name,
+      email: email || currentContact.email,
+      phone: phone || currentContact.phone,
+    };
+
     const validationResult = updateContactSchema.validate(updFields);
     if (validationResult.error) {
       throw HttpError(400, validationResult.error.message);
     }
+
     const updatedContact = await contactsService.updateContact(id, updFields);
     if (!updatedContact) {
       throw HttpError(404, "Not found");
     }
+
     res.status(200).json(updatedContact);
   } catch (err) {
     next(err);
