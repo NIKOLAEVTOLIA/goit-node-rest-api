@@ -90,3 +90,22 @@ export const updateContact = async (req, res, next) => {
     next(err);
   }
 };
+
+export const updateStatusContact = async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { favorite } = req.body;
+
+    const updatedContact = await contactsService.updateContact(contactId, {
+      favorite,
+    });
+
+    if (!updatedContact) {
+      throw HttpError(404, "Not found");
+    }
+
+    res.status(200).json(updatedContact);
+  } catch (err) {
+    next(err);
+  }
+};
