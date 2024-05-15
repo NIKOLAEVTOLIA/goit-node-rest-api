@@ -3,8 +3,10 @@ import HttpError from "../helpers/HttpError.js";
 import {
   createContactSchema,
   updateContactSchema,
+  updStatusSchema,
 } from "../schemas/contactsSchemas.js";
 import validateBody from "../helpers/validateBody.js";
+import validID from "../middlewares/validID.js";
 
 export const getAllContacts = async (req, res, next) => {
   try {
@@ -15,18 +17,21 @@ export const getAllContacts = async (req, res, next) => {
   }
 };
 
-export const getOneContact = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const contact = await contactsService.getContactById(id);
-    if (!contact) {
-      throw HttpError(404, "Not found");
+export const getOneContact = [
+  validID,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const contact = await contactsService.getContactById(id);
+      if (!contact) {
+        throw HttpError(404, "Not found");
+      }
+      res.status(200).json(contact);
+    } catch (err) {
+      next(err);
     }
-    res.status(200).json(contact);
-  } catch (err) {
-    next(err);
-  }
-};
+  },
+];
 
 export const deleteContact = async (req, res, next) => {
   try {
@@ -91,21 +96,24 @@ export const updateContact = async (req, res, next) => {
   }
 };
 
-export const updateStatusContact = async (req, res, next) => {
-  try {
-    const { contactId } = req.params;
-    const { favorite } = req.body;
+export const updateStatusContact = [
+  validateBody(updStatusSchema),
+  async (req, res, next) => {
+    try {
+      const { contactId } = req.params;
+      const { favorite } = req.body;
 
-    const updatedContact = await contactsService.updateContact(contactId, {
-      favorite,
-    });
+      const updatedContact = await contactsService.updateContact(contactId, {
+        favorite,
+      });
 
-    if (!updatedContact) {
-      throw HttpError(404, "Not found");
+      if (!updatedContact) {
+        throw HttpError(404, "Not found");
+      }
+
+      res.status(200).json(updatedContact);
+    } catch (err) {
+      next(err);
     }
-
-    res.status(200).json(updatedContact);
-  } catch (err) {
-    next(err);
-  }
-};
+  },
+];
