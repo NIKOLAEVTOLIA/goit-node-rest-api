@@ -7,17 +7,22 @@ import {
 } from "../schemas/contactsSchemas.js";
 import validateBody from "../helpers/validateBody.js";
 import validID from "../middlewares/validID.js";
+import authenticate from "../middlewares/authenticate.js";
 
-export const getAllContacts = async (req, res, next) => {
-  try {
-    const contacts = await contactsService.listContacts();
-    res.status(200).json(contacts);
-  } catch (err) {
-    next(err);
-  }
-};
+export const getAllContacts = [
+  authenticate,
+  async (req, res, next) => {
+    try {
+      const contacts = await contactsService.listContacts(req.user._id);
+      res.status(200).json(contacts);
+    } catch (err) {
+      next(err);
+    }
+  },
+];
 
 export const getOneContact = [
+  authenticate,
   validID,
   async (req, res, next) => {
     try {
@@ -34,6 +39,7 @@ export const getOneContact = [
 ];
 
 export const deleteContact = [
+  authenticate,
   validID,
   async (req, res, next) => {
     try {
@@ -50,11 +56,17 @@ export const deleteContact = [
 ];
 
 export const createContact = [
+  authenticate,
   validateBody(createContactSchema),
   async (req, res, next) => {
     try {
       const { name, email, phone } = req.body;
-      const newContact = await contactsService.addContact(name, email, phone);
+      const newContact = await contactsService.addContact(
+        name,
+        email,
+        phone,
+        req.user._id
+      );
       res.status(201).json(newContact);
     } catch (err) {
       next(err);
@@ -63,6 +75,7 @@ export const createContact = [
 ];
 
 export const updateContact = [
+  authenticate,
   validID,
   async (req, res, next) => {
     try {
@@ -103,6 +116,7 @@ export const updateContact = [
 ];
 
 export const updateStatusContact = [
+  authenticate,
   validID,
   validateBody(updStatusSchema),
   async (req, res, next) => {
