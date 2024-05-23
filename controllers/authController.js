@@ -90,10 +90,7 @@ export const current = [
   authenticate,
   async (req, res, next) => {
     try {
-      console.log("Current user request handler:", req.user);
-
       if (!req.user) {
-        console.log("User not found in request.");
         throw HttpError(401, "Not authorized");
       }
 
@@ -101,7 +98,6 @@ export const current = [
       const user = await User.findById(userId);
 
       if (!user) {
-        console.log("User not found in database.");
         throw HttpError(401, "Not authorized");
       }
 
@@ -110,7 +106,6 @@ export const current = [
         subscription: user.subscription,
       });
     } catch (err) {
-      console.error("Error in current user handler:", err);
       next(err);
     }
   },
