@@ -7,13 +7,13 @@ import {
 } from "../schemas/contactsSchemas.js";
 import validateBody from "../helpers/validateBody.js";
 import validID from "../middlewares/validID.js";
-import authenticate from "../middlewares/authenticate.js";
 
 export const getAllContacts = [
-  authenticate,
   async (req, res, next) => {
     try {
-      const contacts = await contactsService.listContacts(req.user._id);
+      const userId = req.user._id;
+      const contacts = await contactsService.listContacts(userId);
+
       res.status(200).json(contacts);
     } catch (err) {
       next(err);
@@ -22,13 +22,14 @@ export const getAllContacts = [
 ];
 
 export const getOneContact = [
-  authenticate,
   validID,
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const contact = await contactsService.getContactById(id);
-      if (!contact) {
+      const userId = req.user._id;
+
+      const contact = await contactsService.getContactById(id, userId);
+      if (!contact || String(contact.owner) !== String(userId)) {
         throw HttpError(404, "Not found");
       }
       res.status(200).json(contact);
@@ -39,15 +40,17 @@ export const getOneContact = [
 ];
 
 export const deleteContact = [
-  authenticate,
   validID,
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const removedContact = await contactsService.removeContact(id);
-      if (!removedContact) {
+      const userId = req.user._id;
+
+      const removedContact = await contactsService.removeContact(id, userId);
+      if (!removedContact || String(removedContact.owner) !== String(userId)) {
         throw HttpError(404, "Not found");
       }
+
       res.status(200).json(removedContact);
     } catch (err) {
       next(err);
@@ -56,16 +59,16 @@ export const deleteContact = [
 ];
 
 export const createContact = [
-  authenticate,
   validateBody(createContactSchema),
   async (req, res, next) => {
     try {
+      const userId = req.user._id;
       const { name, email, phone } = req.body;
       const newContact = await contactsService.addContact(
         name,
         email,
         phone,
-        req.user._id
+        userId
       );
       res.status(201).json(newContact);
     } catch (err) {
@@ -75,20 +78,20 @@ export const createContact = [
 ];
 
 export const updateContact = [
-  authenticate,
   validID,
   async (req, res, next) => {
     try {
       const { id } = req.params;
       const { name, email, phone } = req.body;
+      const userId = req.user._id;
 
       if (!name && !email && !phone) {
         throw HttpError(400, "Body must have at least one field");
       }
 
-      const currentContact = await contactsService.getContactById(id);
+      const currentContact = await contactsService.getContactById(id, userId);
 
-      if (!currentContact) {
+      if (!currentContact || String(currentContact.owner) !== String(userId)) {
         throw HttpError(404, "Not found");
       }
 
@@ -103,7 +106,11 @@ export const updateContact = [
         throw HttpError(400, validationResult.error.message);
       }
 
-      const updatedContact = await contactsService.updateContact(id, updFields);
+      const updatedContact = await contactsService.updateContact(
+        id,
+        updFields,
+        userId
+      );
       if (!updatedContact) {
         throw HttpError(404, "Not found");
       }
@@ -116,19 +123,21 @@ export const updateContact = [
 ];
 
 export const updateStatusContact = [
-  authenticate,
   validID,
   validateBody(updStatusSchema),
   async (req, res, next) => {
     try {
       const { contactId } = req.params;
       const { favorite } = req.body;
+      const userId = req.user._id;
 
-      const updatedContact = await contactsService.updateContact(contactId, {
-        favorite,
-      });
+      const updatedContact = await contactsService.updateContact(
+        contactId,
+        { favorite },
+        userId
+      );
 
-      if (!updatedContact) {
+      if (!updatedContact || String(updatedContact.owner) !== String(userId)) {
         throw HttpError(404, "Not found");
       }
 

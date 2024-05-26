@@ -5,12 +5,13 @@ import {
   logout,
   current,
 } from "../controllers/authController.js";
+import authenticate from "../middlewares/authenticate.js";
 
 const authRouter = express.Router();
 
 authRouter.post("/register", register);
 authRouter.post("/login", login);
-authRouter.post("/logout", logout);
-authRouter.get("/current", current);
+authRouter.post("/logout", authenticate, logout);
+authRouter.get("/current", authenticate, current);
 
 export default authRouter;

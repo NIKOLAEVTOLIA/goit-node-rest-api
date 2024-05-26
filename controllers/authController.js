@@ -4,7 +4,6 @@ import User from "../schemas/userModel.js";
 import { registerSchema, loginSchema } from "../schemas/userSchemas.js";
 import HttpError from "../helpers/HttpError.js";
 import validateBody from "../helpers/validateBody.js";
-import authenticate from "../middlewares/authenticate.js";
 
 export const register = [
   validateBody(registerSchema),
@@ -46,7 +45,7 @@ export const login = [
       }
 
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "6h",
+        expiresIn: "24h",
       });
       user.token = token;
       await user.save();
@@ -65,11 +64,9 @@ export const login = [
 ];
 
 export const logout = [
-  authenticate,
   async (req, res, next) => {
     try {
       const userId = req.user._id;
-
       const user = await User.findById(userId);
 
       if (!user) {
@@ -87,7 +84,6 @@ export const logout = [
 ];
 
 export const current = [
-  authenticate,
   async (req, res, next) => {
     try {
       if (!req.user) {
