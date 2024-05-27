@@ -10,7 +10,7 @@ async function listContacts(ownerId) {
 
 async function getContactById(contactId, ownerId) {
   try {
-    return await Contact.findById({ _id: contactId, owner: ownerId });
+    return await Contact.findOne({ _id: contactId, owner: ownerId });
   } catch (err) {
     throw err;
   }
@@ -18,7 +18,7 @@ async function getContactById(contactId, ownerId) {
 
 async function removeContact(contactId, ownerId) {
   try {
-    return await Contact.findByIdAndDelete({ _id: contactId, owner: ownerId });
+    return await Contact.findOneAndDelete({ _id: contactId, owner: ownerId });
   } catch (err) {
     throw err;
   }
@@ -35,7 +35,7 @@ async function addContact(name, email, phone, ownerId) {
 
 async function updateContact(contactId, updFields, ownerId) {
   try {
-    return await Contact.findByIdAndUpdate(
+    return await Contact.findOneAndUpdate(
       { _id: contactId, owner: ownerId },
       updFields,
       { new: true }

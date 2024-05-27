@@ -29,7 +29,7 @@ export const getOneContact = [
       const userId = req.user._id;
 
       const contact = await contactsService.getContactById(id, userId);
-      if (!contact || String(contact.owner) !== String(userId)) {
+      if (!contact) {
         throw HttpError(404, "Not found");
       }
       res.status(200).json(contact);
@@ -47,7 +47,7 @@ export const deleteContact = [
       const userId = req.user._id;
 
       const removedContact = await contactsService.removeContact(id, userId);
-      if (!removedContact || String(removedContact.owner) !== String(userId)) {
+      if (!removedContact) {
         throw HttpError(404, "Not found");
       }
 
@@ -89,16 +89,10 @@ export const updateContact = [
         throw HttpError(400, "Body must have at least one field");
       }
 
-      const currentContact = await contactsService.getContactById(id, userId);
-
-      if (!currentContact || String(currentContact.owner) !== String(userId)) {
-        throw HttpError(404, "Not found");
-      }
-
       const updFields = {
-        name: name || currentContact.name,
-        email: email || currentContact.email,
-        phone: phone || currentContact.phone,
+        name: name || undefined,
+        email: email || undefined,
+        phone: phone || undefined,
       };
 
       const validationResult = updateContactSchema.validate(updFields);
@@ -137,7 +131,7 @@ export const updateStatusContact = [
         userId
       );
 
-      if (!updatedContact || String(updatedContact.owner) !== String(userId)) {
+      if (!updatedContact) {
         throw HttpError(404, "Not found");
       }
 
