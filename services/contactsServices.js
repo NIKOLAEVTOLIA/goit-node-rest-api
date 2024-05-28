@@ -1,41 +1,45 @@
 import Contact from "../schemas/contactModel.js";
 
-async function listContacts() {
+async function listContacts(ownerId) {
   try {
-    return await Contact.find({});
+    return await Contact.find({ owner: ownerId });
   } catch (err) {
     throw err;
   }
 }
 
-async function getContactById(contactId) {
+async function getContactById(contactId, ownerId) {
   try {
-    return await Contact.findById(contactId);
+    return await Contact.findOne({ _id: contactId, owner: ownerId });
   } catch (err) {
     throw err;
   }
 }
 
-async function removeContact(contactId) {
+async function removeContact(contactId, ownerId) {
   try {
-    return await Contact.findByIdAndDelete(contactId);
+    return await Contact.findOneAndDelete({ _id: contactId, owner: ownerId });
   } catch (err) {
     throw err;
   }
 }
 
-async function addContact(name, email, phone) {
+async function addContact(name, email, phone, ownerId) {
   try {
-    const newContact = new Contact({ name, email, phone });
+    const newContact = new Contact({ name, email, phone, owner: ownerId });
     return await newContact.save();
   } catch (err) {
     throw err;
   }
 }
 
-async function updateContact(contactId, updFields) {
+async function updateContact(contactId, updFields, ownerId) {
   try {
-    return await Contact.findByIdAndUpdate(contactId, updFields, { new: true });
+    return await Contact.findOneAndUpdate(
+      { _id: contactId, owner: ownerId },
+      updFields,
+      { new: true }
+    );
   } catch (err) {
     throw err;
   }

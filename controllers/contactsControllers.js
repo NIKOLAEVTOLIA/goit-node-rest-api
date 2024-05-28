@@ -8,21 +8,27 @@ import {
 import validateBody from "../helpers/validateBody.js";
 import validID from "../middlewares/validID.js";
 
-export const getAllContacts = async (req, res, next) => {
-  try {
-    const contacts = await contactsService.listContacts();
-    res.status(200).json(contacts);
-  } catch (err) {
-    next(err);
-  }
-};
+export const getAllContacts = [
+  async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const contacts = await contactsService.listContacts(userId);
+
+      res.status(200).json(contacts);
+    } catch (err) {
+      next(err);
+    }
+  },
+];
 
 export const getOneContact = [
   validID,
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const contact = await contactsService.getContactById(id);
+      const userId = req.user._id;
+
+      const contact = await contactsService.getContactById(id, userId);
       if (!contact) {
         throw HttpError(404, "Not found");
       }
@@ -38,10 +44,13 @@ export const deleteContact = [
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const removedContact = await contactsService.removeContact(id);
+      const userId = req.user._id;
+
+      const removedContact = await contactsService.removeContact(id, userId);
       if (!removedContact) {
         throw HttpError(404, "Not found");
       }
+
       res.status(200).json(removedContact);
     } catch (err) {
       next(err);
@@ -53,8 +62,14 @@ export const createContact = [
   validateBody(createContactSchema),
   async (req, res, next) => {
     try {
+      const userId = req.user._id;
       const { name, email, phone } = req.body;
-      const newContact = await contactsService.addContact(name, email, phone);
+      const newContact = await contactsService.addContact(
+        name,
+        email,
+        phone,
+        userId
+      );
       res.status(201).json(newContact);
     } catch (err) {
       next(err);
@@ -68,21 +83,16 @@ export const updateContact = [
     try {
       const { id } = req.params;
       const { name, email, phone } = req.body;
+      const userId = req.user._id;
 
       if (!name && !email && !phone) {
         throw HttpError(400, "Body must have at least one field");
       }
 
-      const currentContact = await contactsService.getContactById(id);
-
-      if (!currentContact) {
-        throw HttpError(404, "Not found");
-      }
-
       const updFields = {
-        name: name || currentContact.name,
-        email: email || currentContact.email,
-        phone: phone || currentContact.phone,
+        name: name || undefined,
+        email: email || undefined,
+        phone: phone || undefined,
       };
 
       const validationResult = updateContactSchema.validate(updFields);
@@ -90,7 +100,11 @@ export const updateContact = [
         throw HttpError(400, validationResult.error.message);
       }
 
-      const updatedContact = await contactsService.updateContact(id, updFields);
+      const updatedContact = await contactsService.updateContact(
+        id,
+        updFields,
+        userId
+      );
       if (!updatedContact) {
         throw HttpError(404, "Not found");
       }
@@ -109,10 +123,13 @@ export const updateStatusContact = [
     try {
       const { contactId } = req.params;
       const { favorite } = req.body;
+      const userId = req.user._id;
 
-      const updatedContact = await contactsService.updateContact(contactId, {
-        favorite,
-      });
+      const updatedContact = await contactsService.updateContact(
+        contactId,
+        { favorite },
+        userId
+      );
 
       if (!updatedContact) {
         throw HttpError(404, "Not found");
