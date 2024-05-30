@@ -4,6 +4,10 @@ import User from "../schemas/userModel.js";
 import { registerSchema, loginSchema } from "../schemas/userSchemas.js";
 import HttpError from "../helpers/HttpError.js";
 import validateBody from "../helpers/validateBody.js";
+import gravatar from "gravatar";
+import jimp from "jimp";
+import path from "path";
+import fs from "fs/promises";
 
 export const register = [
   validateBody(registerSchema),
@@ -18,12 +22,18 @@ export const register = [
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = await User.create({ email, password: hashedPassword });
+      const avatarURL = gravatar.url(email, { s: "250", d: "retro" }, true);
+      const newUser = await User.create({
+        email,
+        password: hashedPassword,
+        avatarURL,
+      });
 
       res.status(201).json({
         user: {
           email: newUser.email,
           subscription: newUser.subscription,
+          avatarURL: newUser.avatarURL,
         },
       });
     } catch (err) {
@@ -101,6 +111,43 @@ export const current = [
         email: user.email,
         subscription: user.subscription,
       });
+    } catch (err) {
+      next(err);
+    }
+  },
+];
+
+export const updateAvatar = [
+  async (req, res, next) => {
+    try {
+      if (!req.file) {
+        throw HttpError(400, "Avatar not found!");
+      }
+
+      const { path: tempPath, originalname } = req.file;
+      const userId = req.user._id;
+
+      const ext = path.extname(originalname);
+      const avatarName = `${userId}${ext}`;
+      const avatarPath = path.join("public", "avatars", avatarName);
+      const tmpDir = path.join(process.cwd(), "tmp");
+      const tmpAvatarPath = path.join(tmpDir, avatarName);
+
+      const image = await jimp.read(tempPath);
+      await image.resize(250, 250).writeAsync(tmpAvatarPath);
+
+      await fs.copyFile(tmpAvatarPath, avatarPath);
+      await fs.unlink(tmpAvatarPath);
+
+      const avatarURL = `/avatars/${avatarName}`;
+
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { avatarURL },
+        { new: true }
+      );
+
+      res.status(200).json({ avatarURL: user.avatarURL });
     } catch (err) {
       next(err);
     }
