@@ -5,6 +5,8 @@ import {
   logout,
   current,
   updateAvatar,
+  verifyEmail,
+  resendVerifEmail,
 } from "../controllers/authController.js";
 import authenticate from "../middlewares/authenticate.js";
 import { uploadAvatar } from "../middlewares/uploadAvatar.js";
@@ -21,5 +23,7 @@ authRouter.patch(
   uploadAvatar.single("avatar"),
   updateAvatar
 );
+authRouter.get("/verify/:verificationToken", verifyEmail);
+authRouter.post("/verify", resendVerifEmail);
 
 export default authRouter;
